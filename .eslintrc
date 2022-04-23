@@ -1,0 +1,19 @@
+{
+  "root": true,
+  "extends": "airbnb-typescript/base",
+  "plugins": ["import", "prettier"],
+  "parserOptions": {
+    "project": "./tsconfig.eslint.json"
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off",
+    "prettier/prettier": "error",
+    "func-names": "off",
+    "no-process-exit": "off",
+    "class-methods-use-this": "off",
+    "no-underscore-dangle": "off",
+    "no-param-reassign": "off",
+    "@typescript-eslint/quotes": "off"
+  }
+}
