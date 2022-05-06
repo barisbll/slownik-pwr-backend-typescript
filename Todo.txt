@@ -1,1 +1,1 @@
-ADD TIME to posts.ts
+move to next.js
