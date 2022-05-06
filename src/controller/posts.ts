@@ -141,7 +141,7 @@ export const getTitle: RequestHandler = async (req, res, next) => {
         _id: post.toString(),
       })
         .populate("userId", "username")
-        .select("content userId date -_id")!;
+        .select("content userId date ")!;
 
       return foundPost;
     };
@@ -288,6 +288,22 @@ export const deletePost: RequestHandler = async (req, res, next) => {
     foundPost.delete();
 
     res.status(201).json({ success: "ok" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAllTitles: RequestHandler = async (req, res, next) => {
+  try {
+    const titles = await Title.find().select("posts");
+
+    let tempLength = 0;
+    const response = titles.map((title) => {
+      tempLength = title.posts.length;
+      return { _id: title._id, length: tempLength };
+    });
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }

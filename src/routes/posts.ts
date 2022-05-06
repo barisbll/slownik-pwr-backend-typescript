@@ -8,6 +8,7 @@ import {
   getTitles,
   updatePost,
   deletePost,
+  getAllTitles,
 } from "../controller/posts";
 import isAuth from "../middleware/is-auth";
 
@@ -44,5 +45,7 @@ router.get("/titles/:filter", getTitles);
 router.put("/post", isAuth, updatePost);
 
 router.delete("/post/:postId", isAuth, deletePost);
+
+router.get("/all-titles", getAllTitles);
 
 export default router;
