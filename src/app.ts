@@ -1,5 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-import express, { Request, Response, ErrorRequestHandler } from "express";
+import express, { NextFunction, Request, Response } from "express";
+
 import { json } from "body-parser";
 import cors from "cors";
 import mongoose from "mongoose";
@@ -8,6 +9,7 @@ import secret from "./secret";
 import postRoutes from "./routes/posts";
 import authRoutes from "./routes/users";
 import { get404 } from "./controller/404";
+import { CustomError } from "./util/customError";
 
 const app = express();
 
@@ -31,10 +33,20 @@ mongoose
 app.use(get404);
 
 // express.js error handling middleware
-const errorHandler: ErrorRequestHandler = (err, req, res) => {
-  console.log(err);
-  if (!err.status) err.status = 500;
-  res.status(err.status).json({ err: err.message });
+const errorHandler = (
+  err: TypeError | CustomError,
+  req: Request,
+  res: Response,
+  // eslint-disable-next-line
+  next: NextFunction
+) => {
+  let customError = err;
+
+  if (!(err instanceof CustomError)) {
+    customError = new CustomError(err.message);
+  }
+
+  res.status((customError as CustomError).status).send(customError);
 };
 
 app.use(errorHandler);

@@ -1,10 +1,11 @@
-import { ObjectId } from "mongoose";
 import { validationResult } from "express-validator";
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+import { NextFunction, RequestHandler, Request, Response } from "express";
 
 import { Title } from "../model/titles";
 import { Post } from "../model/posts";
-import { RequestHandler } from "express";
 import { User } from "../model/users";
+import { CustomError } from "../util/customError";
 
 const POSTS_PER_PAGE = 7;
 
@@ -22,13 +23,13 @@ export const createTitle: RequestHandler = async (req, res, next) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      throw new Error("User does not exist!");
+      throw new CustomError("User does not exist!");
     }
 
     const existingTitle = await Title.findOne({ name: title });
 
     if (existingTitle) {
-      throw new Error("Title already exists!");
+      throw new CustomError("Title already exists!");
     }
 
     const titleObject = new Title({
@@ -46,6 +47,7 @@ export const createTitle: RequestHandler = async (req, res, next) => {
       content: post,
       titleId: savedTitle._id,
       userId: user._id,
+      date: new Date(),
     });
 
     const savedPost = await postObject.save();
@@ -76,13 +78,13 @@ export const createPost: RequestHandler = async (req, res, next) => {
     const user = await User.findById(userId);
 
     if (!user) {
-      throw new Error("User does not exist!");
+      throw new CustomError("User does not exist!");
     }
 
     const title = await Title.findById(titleId);
 
     if (!title) {
-      throw new Error("Title id does not exist!");
+      throw new CustomError("Title id does not exist!");
     }
 
     const postObject = new Post({
@@ -110,7 +112,7 @@ export const createPost: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getTitle: RequestHandler = async (req, res) => {
+export const getTitle: RequestHandler = async (req, res, next) => {
   const { titleId } = req.params as { titleId: string };
   const { pId = "1" } = req.query as { pId: string };
   try {
@@ -118,7 +120,7 @@ export const getTitle: RequestHandler = async (req, res) => {
     const foundTitle = await Title.findById(titleId);
 
     if (!foundTitle) {
-      throw new Error("Title Id Does Not Exist!");
+      throw new CustomError("Title Id Does Not Exist!");
     }
 
     // Pagination boundaries for quick filtering
@@ -131,36 +133,38 @@ export const getTitle: RequestHandler = async (req, res) => {
     );
 
     if (paginatedPosts.length === 0) {
-      throw new Error("There is no post in that page");
+      throw new CustomError("There is no post in that page");
     }
 
-    // Result array's type
-    type FoundPost = {
-      content: string;
-      userId: ObjectId;
-    };
-
-    // Array to return in response
-    const arr: FoundPost[] = [];
-
     const paginationHelperFunction = async (post: any) => {
-      const foundPost = (await Post.findOne({
+      const foundPost = await Post.findOne({
         _id: post.toString(),
-      }).select("content userId date -_id")!) as unknown as FoundPost;
-
-      arr.push(foundPost);
-
-      // If it found all the posts in that page return
-      if (arr.length === paginatedPosts.length) {
-        return res.status(200).json({ arr });
-      }
+      })
+        .populate("userId", "username")
+        .select("content userId date ")!;
 
       return foundPost;
     };
 
-    return paginatedPosts.map(paginationHelperFunction);
-  } catch ({ message }: unknown) {
-    res.status(500).json({ err: message });
+    // Calling each of the posts with the helper function
+    const paginatedPostsArray = [];
+    let tempPaginatedPost;
+    for (let each in paginatedPosts) {
+      tempPaginatedPost = await paginationHelperFunction([
+        paginatedPosts[each],
+      ]);
+      paginatedPostsArray.push(tempPaginatedPost);
+    }
+
+    // Result object to send
+    const resultObject = {
+      titleName: foundTitle.name,
+      posts: paginatedPostsArray,
+    };
+
+    res.status(200).json(resultObject);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -203,6 +207,103 @@ export const getTitles: RequestHandler = async (req, res, next) => {
       .limit(POSTS_PER_PAGE);
 
     res.json({ bestTitles });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updatePost = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { postId, postContent } = req.body as unknown as {
+    postId: string;
+    postContent: string;
+  };
+  try {
+    // Check if body parameters are given
+    if (!postId || !postContent) {
+      throw new CustomError("Body parameters are not given");
+    }
+
+    // Check if given post exists
+    const foundPost = await Post.findById(postId);
+
+    // If given post not exist throw an error
+    if (!foundPost) {
+      throw new CustomError("There is no post post with given id");
+    }
+
+    foundPost.content = postContent;
+    const updatedPost = await foundPost.save();
+
+    res.status(201).json({ updatedPost });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deletePost: RequestHandler = async (req, res, next) => {
+  const { postId } = req.params as { postId: string };
+  const { userId } = req;
+
+  try {
+    if (!postId) {
+      throw new CustomError("There is no postId parameter");
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new CustomError("User does not exist!");
+    }
+
+    const foundPost = await Post.findById(postId);
+
+    if (!foundPost) {
+      throw new CustomError("There is no post with the given id");
+    }
+
+    const titleOfPost = await Title.findById(foundPost?.titleId);
+
+    if (!titleOfPost) {
+      throw new Error("Post to be deleted has no title");
+    }
+
+    const newPosts = titleOfPost.posts.filter(
+      (post) => post._id.toString() !== foundPost._id.toString()
+    );
+    //@ts-ignore
+    titleOfPost.posts = newPosts;
+    titleOfPost.save();
+
+    const newPostsUser = user.posts.filter(
+      (post) => post._id.toString() !== foundPost._id.toString()
+    );
+    // @ts-ignore
+    user.posts = newPostsUser;
+    user.save();
+
+    foundPost.delete();
+
+    res.status(201).json({ success: "ok" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAllTitles: RequestHandler = async (req, res, next) => {
+  try {
+    const titles = await Title.find().select("posts");
+
+    let tempLength = 0;
+    const response = titles.map((title) => {
+      tempLength = title.posts.length;
+      return { _id: title._id, length: tempLength };
+    });
+
+    res.status(200).json(response);
   } catch (err) {
     next(err);
   }

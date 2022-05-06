@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 
 import { User } from "../model/users";
-import { CustomError } from "../util/interfaces";
+import { CustomError } from "../util/customError";
 
 export const signup: RequestHandler = async (req, res, next) => {
   const { username } = req.body as { username: string };
@@ -52,19 +52,13 @@ export const login: RequestHandler = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      const err: CustomError = new Error(
-        "A user with that mail does not exist"
-      );
-      err.status = 401;
-      throw err;
+      throw new CustomError("A user with that mail does not exist", 404);
     }
 
     const isEqual = await bcrypt.compare(password, user.password);
 
     if (!isEqual) {
-      const err: CustomError = new Error("Wrong email or password");
-      err.status = 401;
-      throw err;
+      throw new CustomError("Wrong email or password", 401);
     }
 
     const token = jwt.sign(

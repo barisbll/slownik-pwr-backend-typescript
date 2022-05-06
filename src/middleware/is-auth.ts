@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
-import { CustomError } from "../util/interfaces";
+import { CustomError } from "../util/customError";
 
 interface Token extends JwtPayload {
   email: string;
@@ -13,9 +13,7 @@ const isAuth: RequestHandler = (req, res, next) => {
 
   try {
     if (!authHeader) {
-      const err: CustomError = new Error("Not authenticated");
-      err.status = 401;
-      throw err;
+      throw new CustomError("Not authenticated", 401);
     }
 
     const token = authHeader.split(" ")[1];
@@ -23,9 +21,7 @@ const isAuth: RequestHandler = (req, res, next) => {
     const decodedToken: Token = jwt.verify(token, "secret") as Token;
 
     if (!decodedToken) {
-      const err: CustomError = new Error("Not authenticated");
-      err.status = 401;
-      throw err;
+      throw new CustomError("Not authenticated", 401);
     }
 
     req.userId = decodedToken.userId;
