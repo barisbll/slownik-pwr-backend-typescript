@@ -89,6 +89,7 @@ export const createPost: RequestHandler = async (req, res, next) => {
       content: post,
       titleId: title._id,
       userId: user._id,
+      date: new Date(),
     });
 
     const savedPost = await postObject.save();
@@ -145,7 +146,7 @@ export const getTitle: RequestHandler = async (req, res) => {
     const paginationHelperFunction = async (post: any) => {
       const foundPost = (await Post.findOne({
         _id: post.toString(),
-      }).select("content userId -_id")!) as unknown as FoundPost;
+      }).select("content userId date -_id")!) as unknown as FoundPost;
 
       arr.push(foundPost);
 

@@ -1,11 +1,1 @@
-Validations
-
-Testing
-
-Documentation
-
-Error middleware handling
-
-Deployment
-
-Update, Delete & User Posts Api Endpoints
+ADD TIME to posts.ts
