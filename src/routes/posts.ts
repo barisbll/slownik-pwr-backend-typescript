@@ -14,35 +14,35 @@ import isAuth from "../middleware/is-auth";
 const router = Router();
 
 router.post(
-  "/create-title",
+  "/title",
   isAuth,
   [
     // Post length validator
     body("post")
-      .isLength({ max: 255 })
+      .isLength({ max: 560 })
       .withMessage("The post's characters must be below 255"),
   ],
   createTitle
 );
 
 router.post(
-  "/create-post",
+  "/post",
   isAuth,
   [
     // Post length validator
     body("post")
-      .isLength({ max: 255 })
+      .isLength({ max: 560 })
       .withMessage("The post's characters must be below 255"),
   ],
   createPost
 );
 
-router.get("/get-title/:titleId", getTitle);
+router.get("/title/:titleId", getTitle);
 
-router.get("/get-titles/:filter", getTitles);
+router.get("/titles/:filter", getTitles);
 
-router.put("/update-post", isAuth, updatePost);
+router.put("/post", isAuth, updatePost);
 
-router.put("/delete-post/:postId", isAuth, deletePost);
+router.delete("/post/:postId", isAuth, deletePost);
 
 export default router;

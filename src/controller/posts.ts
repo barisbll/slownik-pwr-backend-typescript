@@ -1,4 +1,3 @@
-import { ObjectId } from "mongoose";
 import { validationResult } from "express-validator";
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 import { NextFunction, RequestHandler, Request, Response } from "express";
@@ -48,6 +47,7 @@ export const createTitle: RequestHandler = async (req, res, next) => {
       content: post,
       titleId: savedTitle._id,
       userId: user._id,
+      date: new Date(),
     });
 
     const savedPost = await postObject.save();
@@ -112,7 +112,7 @@ export const createPost: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getTitle: RequestHandler = async (req, res) => {
+export const getTitle: RequestHandler = async (req, res, next) => {
   const { titleId } = req.params as { titleId: string };
   const { pId = "1" } = req.query as { pId: string };
   try {
@@ -136,33 +136,35 @@ export const getTitle: RequestHandler = async (req, res) => {
       throw new CustomError("There is no post in that page");
     }
 
-    // Result array's type
-    type FoundPost = {
-      content: string;
-      userId: ObjectId;
-    };
-
-    // Array to return in response
-    const arr: FoundPost[] = [];
-
     const paginationHelperFunction = async (post: any) => {
-      const foundPost = (await Post.findOne({
+      const foundPost = await Post.findOne({
         _id: post.toString(),
-      }).select("content userId date -_id")!) as unknown as FoundPost;
-
-      arr.push(foundPost);
-
-      // If it found all the posts in that page return
-      if (arr.length === paginatedPosts.length) {
-        return res.status(200).json({ arr });
-      }
+      })
+        .populate("userId", "username")
+        .select("content userId date -_id")!;
 
       return foundPost;
     };
 
-    return paginatedPosts.map(paginationHelperFunction);
-  } catch ({ message }: unknown) {
-    res.status(500).json({ err: message });
+    // Calling each of the posts with the helper function
+    const paginatedPostsArray = [];
+    let tempPaginatedPost;
+    for (let each in paginatedPosts) {
+      tempPaginatedPost = await paginationHelperFunction([
+        paginatedPosts[each],
+      ]);
+      paginatedPostsArray.push(tempPaginatedPost);
+    }
+
+    // Result object to send
+    const resultObject = {
+      titleName: foundTitle.name,
+      posts: paginatedPostsArray,
+    };
+
+    res.status(200).json(resultObject);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -233,16 +235,59 @@ export const updatePost = async (
       throw new CustomError("There is no post post with given id");
     }
 
-    res.json({ postId });
+    foundPost.content = postContent;
+    const updatedPost = await foundPost.save();
+
+    res.status(201).json({ updatedPost });
   } catch (err) {
-    console.log("test1");
-    // console.log(err);
     next(err);
   }
 };
 
 export const deletePost: RequestHandler = async (req, res, next) => {
+  const { postId } = req.params as { postId: string };
+  const { userId } = req;
+
   try {
+    if (!postId) {
+      throw new CustomError("There is no postId parameter");
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      throw new CustomError("User does not exist!");
+    }
+
+    const foundPost = await Post.findById(postId);
+
+    if (!foundPost) {
+      throw new CustomError("There is no post with the given id");
+    }
+
+    const titleOfPost = await Title.findById(foundPost?.titleId);
+
+    if (!titleOfPost) {
+      throw new Error("Post to be deleted has no title");
+    }
+
+    const newPosts = titleOfPost.posts.filter(
+      (post) => post._id.toString() !== foundPost._id.toString()
+    );
+    //@ts-ignore
+    titleOfPost.posts = newPosts;
+    titleOfPost.save();
+
+    const newPostsUser = user.posts.filter(
+      (post) => post._id.toString() !== foundPost._id.toString()
+    );
+    // @ts-ignore
+    user.posts = newPostsUser;
+    user.save();
+
+    foundPost.delete();
+
+    res.status(201).json({ success: "ok" });
   } catch (err) {
     next(err);
   }
