@@ -159,6 +159,7 @@ export const getTitle: RequestHandler = async (req, res, next) => {
     // Result object to send
     const resultObject = {
       titleName: foundTitle.name,
+      totalPages: Math.floor(foundTitle.posts.length / 7) + 1,
       posts: paginatedPostsArray,
     };
 
