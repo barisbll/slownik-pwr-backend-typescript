@@ -294,17 +294,27 @@ export const deletePost: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const getAllTitles: RequestHandler = async (req, res, next) => {
+export const getAllBestTitles: RequestHandler = async (req, res, next) => {
+  const sortCategory = ["counter", "dayCounter", "weekCounter", "monthCounter"];
+
   try {
-    const titles = await Title.find().select("posts");
+    const bestTitles = new Set();
 
-    let tempLength = 0;
-    const response = titles.map((title) => {
-      tempLength = title.posts.length;
-      return { _id: title._id, length: tempLength };
-    });
+    let tempTitle: any = null;
+    for (let counter in sortCategory) {
+      tempTitle = await Title.find()
+        .sort("-" + sortCategory[counter])
+        .select(`_id `)
+        .limit(300);
 
-    res.status(200).json(response);
+      tempTitle.forEach((title: any) => {
+        bestTitles.add(title._id.toString());
+      });
+    }
+
+    // TODO: Return an array of ids, in each category max 300 and only first page
+
+    res.json({ result: Array.from(bestTitles) });
   } catch (err) {
     next(err);
   }
