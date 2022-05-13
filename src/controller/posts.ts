@@ -104,9 +104,20 @@ export const createPost: RequestHandler = async (req, res, next) => {
     title.weekCounter += 1;
     title.monthCounter += 1;
     title.posts.push(savedPost._id);
-    const savedTitle = await title.save();
+    // const savedTitle = await title.save();
+    await title.save();
 
-    res.status(201).json({ savedTitle });
+    const response = {
+      _id: savedPost._id,
+      content: savedPost.content,
+      date: savedPost.date,
+      userId: {
+        username: user.username,
+        _id: user._id,
+      },
+    };
+
+    res.status(201).json({ response });
   } catch (err) {
     next(err);
   }
@@ -160,6 +171,7 @@ export const getTitle: RequestHandler = async (req, res, next) => {
     const resultObject = {
       titleName: foundTitle.name,
       totalPages: Math.floor(foundTitle.posts.length / 7) + 1,
+      totalPosts: foundTitle.posts.length,
       posts: paginatedPostsArray,
     };
 
