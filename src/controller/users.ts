@@ -73,6 +73,7 @@ export const login: RequestHandler = async (req, res, next) => {
     res.status(200).json({
       token,
       expiresIn: new Date(new Date().getTime() + 172800000),
+      username: user.username,
     });
   } catch (err) {
     next(err);
