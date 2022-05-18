@@ -1,1 +1,7 @@
-move to next.js
+Connect to database via terminal
+
+Create text index
+
+Make some examplary queries to test
+
+Make required api endpoints

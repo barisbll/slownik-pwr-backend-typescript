@@ -331,3 +331,48 @@ export const getAllBestTitles: RequestHandler = async (req, res, next) => {
     next(err);
   }
 };
+
+export const postTitleTextSearch: RequestHandler = async (req, res, next) => {
+  const { title } = req.body as { title: string };
+
+  try {
+    const textResult = await Title.find(
+      { $text: { $search: title } },
+      { score: { $meta: "textScore" } }
+    ).sort({ score: { $meta: "textScore" } });
+
+    res.status(200).json({ result: textResult });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const postPostTextSearch: RequestHandler = async (req, res, next) => {
+  const { post } = req.body as { post: string };
+
+  try {
+    const textResult = await Post.find(
+      { $text: { $search: post } },
+      { score: { $meta: "textScore" } }
+    ).sort({ score: { $meta: "textScore" } });
+
+    res.status(200).json({ result: textResult });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const postUserTextSearch: RequestHandler = async (req, res, next) => {
+  const { user } = req.body as { user: string };
+
+  try {
+    const textResult = await User.find(
+      { $text: { $search: user } },
+      { score: { $meta: "textScore" } }
+    ).sort({ score: { $meta: "textScore" } });
+
+    res.status(200).json({ result: textResult });
+  } catch (err) {
+    next(err);
+  }
+};

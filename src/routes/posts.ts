@@ -9,6 +9,9 @@ import {
   updatePost,
   deletePost,
   getAllBestTitles,
+  postTitleTextSearch,
+  postPostTextSearch,
+  postUserTextSearch,
 } from "../controller/posts";
 import isAuth from "../middleware/is-auth";
 
@@ -47,5 +50,11 @@ router.put("/post", isAuth, updatePost);
 router.delete("/post/:postId", isAuth, deletePost);
 
 router.get("/all-best-titles", getAllBestTitles);
+
+router.post("/title-text-search", postTitleTextSearch);
+
+router.post("/post-text-search", postPostTextSearch);
+
+router.post("/user-text-search", postUserTextSearch);
 
 export default router;

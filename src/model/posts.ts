@@ -9,10 +9,12 @@ interface PostI {
 }
 
 const post = new Schema<PostI>({
-  content: { type: String, required: true },
+  content: { type: String, text: true, required: true },
   titleId: { type: Schema.Types.ObjectId, required: true, ref: "Title" },
   userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
   date: { type: Date, required: true },
 });
+
+post.index({ content: "text" });
 
 export const Post = mongoose.model("Post", post);

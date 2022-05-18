@@ -21,7 +21,7 @@ app.use("/posts", postRoutes);
 app.use("/auth", authRoutes);
 
 mongoose
-  .connect(secret.mongodbSecret)
+  .connect(secret.mongodbSecret, { autoIndex: false })
   .then(() => {
     app.listen(8080);
   })
