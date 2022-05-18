@@ -8,6 +8,7 @@ import { User } from "../model/users";
 import { CustomError } from "../util/customError";
 
 const POSTS_PER_PAGE = 7;
+const TEXT_SEARCH_RESULT_LIMIT = 5;
 
 export const createTitle: RequestHandler = async (req, res, next) => {
   const { title, post } = req.body as { title: string; post: string };
@@ -339,7 +340,10 @@ export const postTitleTextSearch: RequestHandler = async (req, res, next) => {
     const textResult = await Title.find(
       { $text: { $search: title } },
       { score: { $meta: "textScore" } }
-    ).sort({ score: { $meta: "textScore" } });
+    )
+      .sort({ score: { $meta: "textScore" } })
+      .limit(TEXT_SEARCH_RESULT_LIMIT)
+      .select("name");
 
     res.status(200).json({ result: textResult });
   } catch (err) {
@@ -354,7 +358,10 @@ export const postPostTextSearch: RequestHandler = async (req, res, next) => {
     const textResult = await Post.find(
       { $text: { $search: post } },
       { score: { $meta: "textScore" } }
-    ).sort({ score: { $meta: "textScore" } });
+    )
+      .sort({ score: { $meta: "textScore" } })
+      .limit(TEXT_SEARCH_RESULT_LIMIT)
+      .select("content titleId userId");
 
     res.status(200).json({ result: textResult });
   } catch (err) {
@@ -369,7 +376,10 @@ export const postUserTextSearch: RequestHandler = async (req, res, next) => {
     const textResult = await User.find(
       { $text: { $search: user } },
       { score: { $meta: "textScore" } }
-    ).sort({ score: { $meta: "textScore" } });
+    )
+      .sort({ score: { $meta: "textScore" } })
+      .limit(TEXT_SEARCH_RESULT_LIMIT)
+      .select("username");
 
     res.status(200).json({ result: textResult });
   } catch (err) {
