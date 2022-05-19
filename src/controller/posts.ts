@@ -226,7 +226,7 @@ export const getTitles: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const updatePost = async (
+export const putUpdatePost = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -235,6 +235,13 @@ export const updatePost = async (
     postId: string;
     postContent: string;
   };
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    res.status(422).json({ errors });
+  }
+
   try {
     // Check if body parameters are given
     if (!postId || !postContent) {

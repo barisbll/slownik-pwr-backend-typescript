@@ -6,7 +6,7 @@ import {
   createTitle,
   getTitle,
   getTitles,
-  updatePost,
+  putUpdatePost,
   deletePost,
   getAllBestTitles,
   postTitleTextSearch,
@@ -36,7 +36,7 @@ router.post(
     // Post length validator
     body("post")
       .isLength({ max: 560 })
-      .withMessage("The post's characters must be below 255"),
+      .withMessage("The post's characters must be below 560"),
   ],
   createPost
 );
@@ -45,7 +45,17 @@ router.get("/title/:titleId", getTitle);
 
 router.get("/titles/:filter", getTitles);
 
-router.put("/post", isAuth, updatePost);
+router.put(
+  "/post",
+  isAuth,
+  [
+    // Post length validator
+    body("postContent")
+      .isLength({ max: 560 })
+      .withMessage("The post's characters must be below 560"),
+  ],
+  putUpdatePost
+);
 
 router.delete("/post/:postId", isAuth, deletePost);
 
