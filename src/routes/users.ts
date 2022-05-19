@@ -51,8 +51,8 @@ router.post(
       }),
 
     // Password validators
-    body("password", "Password must be between 5 - 40 characters").isLength({
-      min: 5,
+    body("password", "Password must be between 8 - 40 characters").isLength({
+      min: 8,
       max: 40,
     }),
 
