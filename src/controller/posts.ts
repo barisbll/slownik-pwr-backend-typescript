@@ -8,6 +8,7 @@ import { User } from "../model/users";
 import { CustomError } from "../util/customError";
 
 const POSTS_PER_PAGE = 7;
+const BEST_TITLES_LIMIT = 20;
 const TEXT_SEARCH_RESULT_LIMIT = 5;
 
 export const createTitle: RequestHandler = async (req, res, next) => {
@@ -218,7 +219,7 @@ export const getTitles: RequestHandler = async (req, res, next) => {
     const bestTitles = await Title.find()
       .sort("-" + sortCategory)
       .select(`name ${sortCategory}`)
-      .limit(POSTS_PER_PAGE);
+      .limit(BEST_TITLES_LIMIT);
 
     res.json({ bestTitles });
   } catch (err) {
@@ -295,9 +296,14 @@ export const deletePost: RequestHandler = async (req, res, next) => {
     const newPosts = titleOfPost.posts.filter(
       (post) => post._id.toString() !== foundPost._id.toString()
     );
-    //@ts-ignore
-    titleOfPost.posts = newPosts;
-    titleOfPost.save();
+
+    if (newPosts.length === 0) {
+      titleOfPost.delete();
+    } else {
+      //@ts-ignore
+      titleOfPost.posts = newPosts;
+      titleOfPost.save();
+    }
 
     const newPostsUser = user.posts.filter(
       (post) => post._id.toString() !== foundPost._id.toString()
