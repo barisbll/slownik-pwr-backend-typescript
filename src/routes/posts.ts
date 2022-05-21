@@ -21,10 +21,14 @@ router.post(
   "/title",
   isAuth,
   [
+    // Title length validator
+    body("title")
+      .isLength({ max: 128 })
+      .withMessage("The title's characters must be below 128"),
     // Post length validator
     body("post")
       .isLength({ max: 560 })
-      .withMessage("The post's characters must be below 255"),
+      .withMessage("The post's characters must be below 560"),
   ],
   createTitle
 );
