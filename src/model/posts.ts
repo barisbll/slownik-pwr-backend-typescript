@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { Schema, Types } from "mongoose";
 
-interface PostI {
+export interface PostI {
+  _id: mongoose.Types.ObjectId;
   content: string;
   titleId: Types.ObjectId;
   userId: Types.ObjectId;

@@ -6,6 +6,7 @@ import {
   createTitle,
   getTitle,
   getTitles,
+  getHomeContent,
   putUpdatePost,
   deletePost,
   getAllBestTitles,
@@ -48,6 +49,8 @@ router.post(
 router.get("/title/:titleId", getTitle);
 
 router.get("/titles/:filter", getTitles);
+
+router.get("/home", getHomeContent);
 
 router.put(
   "/post",

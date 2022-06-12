@@ -1,9 +1,10 @@
 import { validationResult } from "express-validator";
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 import { NextFunction, RequestHandler, Request, Response } from "express";
+import mongoose from "mongoose";
 
-import { Title } from "../model/titles";
-import { Post } from "../model/posts";
+import { Title, TitleI } from "../model/titles";
+import { Post, PostI } from "../model/posts";
 import { User } from "../model/users";
 import { CustomError } from "../util/customError";
 
@@ -222,6 +223,77 @@ export const getTitles: RequestHandler = async (req, res, next) => {
       .limit(BEST_TITLES_LIMIT);
 
     res.json({ bestTitles });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getHomeContent: RequestHandler = async (req, res, next) => {
+  // Interface of objects in the result array
+  interface ResultObject {
+    postId?: string;
+    postContent?: string;
+    title?: string;
+    titleId?: string;
+    pageId?: number;
+    username?: string;
+    userId?: string;
+  }
+
+  // Response array
+  const result: ResultObject[] = [];
+
+  try {
+    // Fetch last 7 posts
+    const lastPosts: PostI[] = await Post.find()
+      .sort("-date")
+      .limit(POSTS_PER_PAGE);
+
+    for (const post of lastPosts) {
+      if (!post) {
+        throw new Error("Post is not found");
+      }
+
+      // Find title of those posts
+      const title = await Title.findById(post.titleId);
+      if (title) {
+        title as TitleI;
+      }
+
+      if (!title) {
+        throw new Error("Title of the post not found");
+      }
+
+      // Find pageId of that post
+      const postObjectId = post._id as mongoose.Types.ObjectId;
+      const postIndexOnTitle = title?.posts.indexOf(postObjectId);
+
+      let pageId: number = 0;
+      if (typeof postIndexOnTitle === "number") {
+        pageId = Math.floor(postIndexOnTitle / 7);
+        pageId += 1;
+      }
+
+      // Find user of that post
+      const user = await User.findById(post.userId);
+
+      if (!user) {
+        throw new Error("User of the post not fount");
+      }
+
+      // Push the output to the result array
+      result.push({
+        postId: post._id?.toString(),
+        postContent: post.content,
+        title: title.name,
+        titleId: title._id.toString(),
+        pageId: pageId,
+        username: user.username,
+        userId: user._id.toString(),
+      });
+    }
+
+    res.status(200).json({ result });
   } catch (err) {
     next(err);
   }
