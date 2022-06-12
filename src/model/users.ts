@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Schema, Types } from "mongoose";
 
 export interface UserI {
+  _id: mongoose.Types.ObjectId;
   username: string;
   email: string;
   password: string;

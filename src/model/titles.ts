@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { Schema, Types } from "mongoose";
 
-interface TitleI {
+export interface TitleI {
+  _id: mongoose.Types.ObjectId;
   name: string;
   counter: number;
   dayCounter: number;
