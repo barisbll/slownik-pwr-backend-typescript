@@ -233,6 +233,7 @@ export const getHomeContent: RequestHandler = async (req, res, next) => {
   interface ResultObject {
     postId?: string;
     postContent?: string;
+    date?: Date;
     title?: string;
     titleId?: string;
     pageId?: number;
@@ -285,6 +286,7 @@ export const getHomeContent: RequestHandler = async (req, res, next) => {
       result.push({
         postId: post._id?.toString(),
         postContent: post.content,
+        date: post.date,
         title: title.name,
         titleId: title._id.toString(),
         pageId: pageId,
