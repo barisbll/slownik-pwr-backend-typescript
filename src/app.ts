@@ -6,12 +6,16 @@ import { json } from "body-parser";
 import cors from "cors";
 import mongoose from "mongoose";
 import helmet from "helmet";
+import morgan from "morgan";
 
 import secret from "./secret";
 import postRoutes from "./routes/posts";
 import authRoutes from "./routes/users";
 import { get404 } from "./controller/404";
 import { CustomError } from "./util/customError";
+
+import { join } from "path";
+import { createWriteStream } from "fs";
 
 const app = express();
 
@@ -22,6 +26,12 @@ app.use(helmet());
 // Routes
 app.use("/posts", postRoutes);
 app.use("/auth", authRoutes);
+
+const accessLogStream = createWriteStream(join(__dirname, "access.log"), {
+  flags: "a",
+});
+
+app.use(morgan("combined", { stream: accessLogStream }));
 
 mongoose
   .connect(secret.mongodbSecret, { autoIndex: false })
