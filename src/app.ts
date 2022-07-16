@@ -1,4 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-redeclare
+import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 
 import { json } from "body-parser";
@@ -21,7 +22,7 @@ app.use("/posts", postRoutes);
 app.use("/auth", authRoutes);
 
 mongoose
-  .connect(secret.mongodbSecret)
+  .connect(secret.mongodbSecret, { autoIndex: false })
   .then(() => {
     app.listen(8080);
   })

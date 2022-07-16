@@ -1,1 +1,10 @@
-move to next.js
+Connect to database via terminal
+
+Create text index
+
+Make some examplary queries to test
+
+Make required api endpoints
+
+
+// beware that in each db creation you must delete app's autoşindex to create new indexes

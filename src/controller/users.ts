@@ -70,7 +70,11 @@ export const login: RequestHandler = async (req, res, next) => {
       { expiresIn: "48h" }
     );
 
-    res.status(200).json({ token, userId: user._id.toString() });
+    res.status(200).json({
+      token,
+      expiresIn: new Date(new Date().getTime() + 172800000),
+      username: user.username,
+    });
   } catch (err) {
     next(err);
   }
