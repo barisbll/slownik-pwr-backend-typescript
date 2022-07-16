@@ -1,13 +1,16 @@
 import { validationResult } from "express-validator";
 // eslint-disable-next-line @typescript-eslint/no-redeclare
 import { NextFunction, RequestHandler, Request, Response } from "express";
+import mongoose from "mongoose";
 
-import { Title } from "../model/titles";
-import { Post } from "../model/posts";
+import { Title, TitleI } from "../model/titles";
+import { Post, PostI } from "../model/posts";
 import { User } from "../model/users";
 import { CustomError } from "../util/customError";
 
 const POSTS_PER_PAGE = 7;
+const BEST_TITLES_LIMIT = 20;
+const TEXT_SEARCH_RESULT_LIMIT = 5;
 
 export const createTitle: RequestHandler = async (req, res, next) => {
   const { title, post } = req.body as { title: string; post: string };
@@ -217,7 +220,7 @@ export const getTitles: RequestHandler = async (req, res, next) => {
     const bestTitles = await Title.find()
       .sort("-" + sortCategory)
       .select(`name ${sortCategory}`)
-      .limit(POSTS_PER_PAGE);
+      .limit(BEST_TITLES_LIMIT);
 
     res.json({ bestTitles });
   } catch (err) {
@@ -225,7 +228,80 @@ export const getTitles: RequestHandler = async (req, res, next) => {
   }
 };
 
-export const updatePost = async (
+export const getHomeContent: RequestHandler = async (req, res, next) => {
+  // Interface of objects in the result array
+  interface ResultObject {
+    postId?: string;
+    postContent?: string;
+    date?: Date;
+    title?: string;
+    titleId?: string;
+    pageId?: number;
+    username?: string;
+    userId?: string;
+  }
+
+  // Response array
+  const result: ResultObject[] = [];
+
+  try {
+    // Fetch last 7 posts
+    const lastPosts: PostI[] = await Post.find()
+      .sort("-date")
+      .limit(POSTS_PER_PAGE);
+
+    for (const post of lastPosts) {
+      if (!post) {
+        throw new Error("Post is not found");
+      }
+
+      // Find title of those posts
+      const title = await Title.findById(post.titleId);
+      if (title) {
+        title as TitleI;
+      }
+
+      if (!title) {
+        throw new Error("Title of the post not found");
+      }
+
+      // Find pageId of that post
+      const postObjectId = post._id as mongoose.Types.ObjectId;
+      const postIndexOnTitle = title?.posts.indexOf(postObjectId);
+
+      let pageId: number = 0;
+      if (typeof postIndexOnTitle === "number") {
+        pageId = Math.floor(postIndexOnTitle / 7);
+        pageId += 1;
+      }
+
+      // Find user of that post
+      const user = await User.findById(post.userId);
+
+      if (!user) {
+        throw new Error("User of the post not fount");
+      }
+
+      // Push the output to the result array
+      result.push({
+        postId: post._id?.toString(),
+        postContent: post.content,
+        date: post.date,
+        title: title.name,
+        titleId: title._id.toString(),
+        pageId: pageId,
+        username: user.username,
+        userId: user._id.toString(),
+      });
+    }
+
+    res.status(200).json({ result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const putUpdatePost = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -234,6 +310,13 @@ export const updatePost = async (
     postId: string;
     postContent: string;
   };
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    res.status(422).json({ errors });
+  }
+
   try {
     // Check if body parameters are given
     if (!postId || !postContent) {
@@ -287,9 +370,14 @@ export const deletePost: RequestHandler = async (req, res, next) => {
     const newPosts = titleOfPost.posts.filter(
       (post) => post._id.toString() !== foundPost._id.toString()
     );
-    //@ts-ignore
-    titleOfPost.posts = newPosts;
-    titleOfPost.save();
+
+    if (newPosts.length === 0) {
+      titleOfPost.delete();
+    } else {
+      //@ts-ignore
+      titleOfPost.posts = newPosts;
+      titleOfPost.save();
+    }
 
     const newPostsUser = user.posts.filter(
       (post) => post._id.toString() !== foundPost._id.toString()
@@ -327,6 +415,60 @@ export const getAllBestTitles: RequestHandler = async (req, res, next) => {
     // TODO: Return an array of ids, in each category max 300 and only first page
 
     res.json({ result: Array.from(bestTitles) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const postTitleTextSearch: RequestHandler = async (req, res, next) => {
+  const { title } = req.body as { title: string };
+
+  try {
+    const textResult = await Title.find(
+      { $text: { $search: title } },
+      { score: { $meta: "textScore" } }
+    )
+      .sort({ score: { $meta: "textScore" } })
+      .limit(TEXT_SEARCH_RESULT_LIMIT)
+      .select("name");
+
+    res.status(200).json({ result: textResult });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const postPostTextSearch: RequestHandler = async (req, res, next) => {
+  const { post } = req.body as { post: string };
+
+  try {
+    const textResult = await Post.find(
+      { $text: { $search: post } },
+      { score: { $meta: "textScore" } }
+    )
+      .sort({ score: { $meta: "textScore" } })
+      .limit(TEXT_SEARCH_RESULT_LIMIT)
+      .select("content titleId userId");
+
+    res.status(200).json({ result: textResult });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const postUserTextSearch: RequestHandler = async (req, res, next) => {
+  const { user } = req.body as { user: string };
+
+  try {
+    const textResult = await User.find(
+      { $text: { $search: user } },
+      { score: { $meta: "textScore" } }
+    )
+      .sort({ score: { $meta: "textScore" } })
+      .limit(TEXT_SEARCH_RESULT_LIMIT)
+      .select("username");
+
+    res.status(200).json({ result: textResult });
   } catch (err) {
     next(err);
   }

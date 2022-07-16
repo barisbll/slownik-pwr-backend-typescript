@@ -6,9 +6,13 @@ import {
   createTitle,
   getTitle,
   getTitles,
-  updatePost,
+  getHomeContent,
+  putUpdatePost,
   deletePost,
   getAllBestTitles,
+  postTitleTextSearch,
+  postPostTextSearch,
+  postUserTextSearch,
 } from "../controller/posts";
 import isAuth from "../middleware/is-auth";
 
@@ -18,10 +22,14 @@ router.post(
   "/title",
   isAuth,
   [
+    // Title length validator
+    body("title")
+      .isLength({ max: 128 })
+      .withMessage("The title's characters must be below 128"),
     // Post length validator
     body("post")
       .isLength({ max: 560 })
-      .withMessage("The post's characters must be below 255"),
+      .withMessage("The post's characters must be below 560"),
   ],
   createTitle
 );
@@ -33,7 +41,7 @@ router.post(
     // Post length validator
     body("post")
       .isLength({ max: 560 })
-      .withMessage("The post's characters must be below 255"),
+      .withMessage("The post's characters must be below 560"),
   ],
   createPost
 );
@@ -42,10 +50,28 @@ router.get("/title/:titleId", getTitle);
 
 router.get("/titles/:filter", getTitles);
 
-router.put("/post", isAuth, updatePost);
+router.get("/home", getHomeContent);
+
+router.put(
+  "/post",
+  isAuth,
+  [
+    // Post length validator
+    body("postContent")
+      .isLength({ max: 560 })
+      .withMessage("The post's characters must be below 560"),
+  ],
+  putUpdatePost
+);
 
 router.delete("/post/:postId", isAuth, deletePost);
 
 router.get("/all-best-titles", getAllBestTitles);
+
+router.post("/title-text-search", postTitleTextSearch);
+
+router.post("/post-text-search", postPostTextSearch);
+
+router.post("/user-text-search", postUserTextSearch);
 
 export default router;
